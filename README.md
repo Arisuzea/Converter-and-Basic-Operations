@@ -66,10 +66,13 @@
 
 ## 🔧 Installation
 
-⋆ Download and **open the ZIP file**.
-⋆ Extract **all contents** to your desired folder.
-⋆ Make sure **libwinpthread-1.dll** is included in the same folder as the executable.
-⋆ Run the program from the extracted files directly.
+1. Download and **open the ZIP file**.
+   
+2. Extract **all contents** to your desired folder.
+
+3. Make sure **libwinpthread-1.dll** is included in the same folder as the executable.
+
+4. Run the program from the extracted files directly.
 
 ---
 
