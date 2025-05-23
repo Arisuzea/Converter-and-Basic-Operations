@@ -94,7 +94,3 @@ This project is open-source under the MIT License.
 ## ❤️ Acknowledgements
 
 Inspired by classic programming exercises with a modern twist. Designed to teach number systems and basic computation elegantly.
-
----
-
-# Let's convert and calculate like a pro! ⚡
