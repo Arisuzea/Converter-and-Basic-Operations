@@ -2,252 +2,188 @@
 #include <conio.h>
 using namespace std;
 
-void clearScreen() {
-    system("cls");
-}
+void clearScreen() { system("cls"); }
+void pause()    { cout<<"\nPress any key to continue..."; getch(); }
 
-void pause() {
-    cout << "\nPress any key to continue...";
-    getch();
-}
-
-// Conversion routines:
-
-void decimalToOctal() {
-    int d, octal = 0, i = 1, rem;
-    cout << "Enter Decimal: ";
-    cin >> d;
-    while (d > 0) {
-        rem = d % 8;
-        octal += rem * i;
-        d /= 8;
-        i *= 10;
-    }
-    cout << "Octal: " << octal << endl;
-}
-
-void octalToDecimal() {
-    int o, decimal = 0, i = 1, rem;
-    cout << "Enter Octal: ";
-    cin >> o;
-    while (o > 0) {
-        rem = o % 10;
-        decimal += rem * i;
-        o /= 10;
-        i *= 8;
-    }
-    cout << "Decimal: " << decimal << endl;
-}
-
-void decimalToBinary() {
-    int d, rem;
-    string binary = "";
-    cout << "Enter Decimal: ";
-    cin >> d;
-    while (d != 0) {
-        rem = d % 2;
-        binary = char(rem + '0') + binary;
-        d /= 2;
-    }
-    cout << "Binary: " << binary << endl;
-}
-
-void binaryToDecimal() {
-    int b, decimal = 0, i = 1, rem;
-    cout << "Enter Binary: ";
-    cin >> b;
-    while (b > 0) {
-        rem = b % 10;
-        if (rem > 1) {
-            cout << "INVALID" << endl;
-            return;
+// Validators
+bool isValid(const char* s, int base) {
+    int i = 0;
+    if (s[0]=='-' && s[1]) i = 1;
+    for (; s[i]; ++i) {
+        char c = s[i];
+        if (base <= 10) {
+            if (c<'0' || c>char('0'+base-1)) return false;
+        } else {
+            if (!((c>='0'&&c<='9') ||
+                  (c>='A'&&c<char('A'+base-10)) ||
+                  (c>='a'&&c<char('a'+base-10)))) return false;
         }
-        decimal += rem * i;
-        b /= 10;
-        i *= 2;
     }
-    cout << "Decimal: " << decimal << endl;
+    return i > (s[0]=='-'?1:0);
 }
 
-void decimalToHexadecimal() {
-    int d, rem;
-    string hex = "";
-    cout << "Enter Decimal: ";
-    cin >> d;
-    while (d != 0) {
-        rem = d % 16;
-        if (rem < 10)
-            hex = char(rem + '0') + hex;
-        else {
-            switch (rem) {
-                case 10: hex = 'A' + hex; break;
-                case 11: hex = 'B' + hex; break;
-                case 12: hex = 'C' + hex; break;
-                case 13: hex = 'D' + hex; break;
-                case 14: hex = 'E' + hex; break;
-                case 15: hex = 'F' + hex; break;
-            }
-        }
-        d /= 16;
+// String→decimal
+int toDec(const char* s, int base) {
+    int val=0, i=0, digit;
+    bool neg=false;
+    if (s[0]=='-') { neg=true; i=1; }
+    for (; s[i]; ++i) {
+        char c=s[i];
+        if (c>='0'&&c<='9') digit=c-'0';
+        else if (c>='A'&&c<='F') digit=c-'A'+10;
+        else digit=c-'a'+10;
+        val = val*base + digit;
     }
-    cout << "Hexadecimal: " << hex << endl;
+    return neg ? -val : val;
 }
 
-void hexadecimalToDecimal() {
-    char h[20];
-    int decimal = 0, i = 0, value;
-    cout << "Enter Hexadecimal: ";
-    cin >> h;
-    while (h[i]) {
-        if (h[i] >= '0' && h[i] <= '9')
-            value = h[i] - '0';
-        else {
-            switch (h[i]) {
-                case 'A': value = 10; break;
-                case 'B': value = 11; break;
-                case 'C': value = 12; break;
-                case 'D': value = 13; break;
-                case 'E': value = 14; break;
-                case 'F': value = 15; break;
-                default:
-                    cout << "INVALID DIGIT" << endl;
-                    return;
-            }
-        }
-        decimal = decimal * 16 + value;
-        i++;
+// Decimal→any base (2,8,10,16)
+void fromDec(int v, int base) {
+    char out[100];
+    int idx=98;
+    out[99]=0;
+    unsigned u = v<0 ? -v : v;
+    if (u==0) out[idx--]='0';
+    while (u && idx>0) {
+        int d = u % base;
+        if (base==16 && d>=10) out[idx--]= 'A'+(d-10);
+        else out[idx--]= '0'+d;
+        u/=base;
     }
-    cout << "Decimal: " << decimal << endl;
+    if (v<0) out[idx--]='-';
+    cout << &out[idx+1];
 }
 
-// Basic operations (binary or octal only):
+// Universal converter
+void universalConvert() {
+    clearScreen();
+    cout<<"Select source base:\n"
+          "1) Binary\n"
+          "2) Octal\n"
+          "3) Decimal\n"
+          "4) Hexadecimal\n"
+          "5) Back\n"
+          "Choice: ";
+    int src; cin>>src;
+    if (src<1||src>4) return;
+
+    int bases[5] = {0,2,8,10,16};
+    const char* names[5] = {"","Binary","Octal","Decimal","Hex"};
+    int srcBase = bases[src];
+
+    char s[100];
+    cout<<"Enter "<<names[src]<<" value: ";
+    cin>>s;
+    if (!isValid(s, srcBase)) {
+        cout<<"Error: invalid "<<names[src]<<'\n';
+        return;
+    }
+    int dec = toDec(s, srcBase);
+
+    clearScreen();
+    cout<<"Convert "<<names[src]<<" to\n";
+    for (int t=1; t<=4; ++t) {
+        if (t==src) continue;
+        cout<<t<<") "<<names[t]<<'\n';
+    }
+    cout<<"Choice: ";
+    int tgt; cin>>tgt;
+    if (tgt<1||tgt>4||tgt==src) return;
+
+    cout<<names[tgt]<<": ";
+    fromDec(dec, bases[tgt]);
+    cout<<endl;
+}
 
 void basicOperations() {
     clearScreen();
     cout << "Basic Operations Mode:\n";
     cout << "1) Binary\n2) Octal\nChoice: ";
-    int bmode; cin >> bmode;
-    int base = (bmode == 1 ? 2 : (bmode == 2 ? 8 : -1));
-    const char* bname = (bmode == 1 ? "binary" : "octal");
-    if (base == -1) {
-        cout << "Invalid choice.\n";
-        pause();
+    int bmode;
+    cin >> bmode;
+    int base = (bmode == 1 ? 2 : 8);
+    const char* name = (bmode == 1 ? "binary" : "octal");
+
+    char s1[100], s2[100];
+    cout << "Enter first " << name << ": ";
+    cin >> s1;
+    if (!isValid(s1, base)) {
+        cout << "Error: invalid " << name << "\n";
         return;
     }
 
-    cout << "Enter first " << bname << " number: ";
-    string s1; cin >> s1;
-    // validate
-    for (char c : s1) if ((c < '0' || c >= '0' + base) && c != '-') {
-        cout << "Invalid number.\n"; pause(); return;
+    cout << "Operator (+ - * / %): ";
+    char op;
+    cin >> op;
+
+    cout << "Enter second " << name << ": ";
+    cin >> s2;
+    if (!isValid(s2, base)) {
+        cout << "Error: invalid " << name << "\n";
+        return;
     }
 
-    cout << "Enter operator (+ - * / %): ";
-    char op; cin >> op;
-    if (op!='+'&&op!='-'&&op!='*'&&op!='/'&&op!='%') {
-        cout << "Invalid operator.\n"; pause(); return;
-    }
-
-    cout << "Enter second " << bname << " number: ";
-    string s2; cin >> s2;
-    for (char c : s2) if ((c < '0' || c >= '0' + base) && c != '-') {
-        cout << "Invalid number.\n"; pause(); return;
-    }
-
-    // convert to decimal
-    auto toDec = [&](const string& s) {
-        int val = 0, sign = 1, i = 0;
-        if (s[0] == '-') { sign = -1; i = 1; }
-        for (; i < (int)s.size(); ++i)
-            val = val * base + (s[i] - '0');
-        return sign * val;
-    };
-    int v1 = toDec(s1), v2 = toDec(s2), res = 0;
+    int v1 = toDec(s1, base);
+    int v2 = toDec(s2, base);
+    int res = 0;
     bool ok = true;
+
     switch (op) {
         case '+': res = v1 + v2; break;
         case '-': res = v1 - v2; break;
         case '*': res = v1 * v2; break;
         case '/':
-            if (v2 == 0) { cout << "Error: Division by zero.\n"; ok = false; }
+            if (v2 == 0) { cout << "Division by zero\n"; ok = false; }
             else res = v1 / v2;
             break;
         case '%':
-            if (v2 == 0) { cout << "Error: Modulo by zero.\n"; ok = false; }
+            if (v2 == 0) { cout << "Modulo by zero\n"; ok = false; }
             else res = v1 % v2;
             break;
+        default:
+            cout << "Invalid operator\n";
+            ok = false;
     }
-    if (!ok) { pause(); return; }
+    if (!ok) return;
 
     // convert result back
     if (res == 0) {
         cout << "Result: 0\n";
-    } else {
-        bool neg = res < 0;
-        unsigned int u = neg ? -res : res;
-        string out = "";
-        while (u > 0) {
-            int d = u % base;
-            out = char('0' + d) + out;
-            u /= base;
-        }
-        if (neg) out = "-" + out;
-        cout << "Result: " << out << endl;
+        return;
     }
-    pause();
+    bool neg = res < 0;
+    unsigned u = neg ? -res : res;
+    char out[100];
+    int idx = 99;
+    out[idx--] = '\0';
+    while (u > 0 && idx > 0) {
+        out[idx--] = (u % base) + '0';
+        u /= base;
+    }
+    if (neg) out[idx--] = '-';
+    cout << "Result: " << &out[idx + 1] << endl;
 }
+
 
 int main() {
     int choice;
     do {
         clearScreen();
-        cout << "MAIN MENU\n";
-        cout << "1. Conversion\n";
-        cout << "2. Basic Operations\n";
-        cout << "3. Exit\n";
-        cout << "Enter your choice: ";
-        cin >> choice;
+        cout<<"MAIN MENU\n"
+              "1) Convert between bases\n"
+              "2) Basic Operations (bin/octal)\n"
+              "3) Exit\n"
+              "Choice: ";
+        cin>>choice;
         clearScreen();
-
-        if (choice == 1) {
-            int sub;
-            do {
-                cout << "CONVERSION MENU\n";
-                cout << "1. Decimal to Octal\n";
-                cout << "2. Octal to Decimal\n";
-                cout << "3. Decimal to Binary\n";
-                cout << "4. Binary to Decimal\n";
-                cout << "5. Decimal to Hexadecimal\n";
-                cout << "6. Hexadecimal to Decimal\n";
-                cout << "7. Back to Main Menu\n";
-                cout << "Enter your choice: ";
-                cin >> sub;
-                clearScreen();
-                switch (sub) {
-                    case 1: decimalToOctal(); break;
-                    case 2: octalToDecimal(); break;
-                    case 3: decimalToBinary(); break;
-                    case 4: binaryToDecimal(); break;
-                    case 5: decimalToHexadecimal(); break;
-                    case 6: hexadecimalToDecimal(); break;
-                    case 7: break;
-                    default: cout << "Invalid choice.\n"; break;
-                }
-                if (sub >= 1 && sub <= 6) pause();
-                clearScreen();
-            } while (sub != 7);
-        }
-        else if (choice == 2) {
-            basicOperations();
-        }
-        else if (choice == 3) {
-            cout << "Exiting...\n";
-        }
-        else {
-            cout << "Invalid choice.\n";
+        if (choice==1) {
+            universalConvert();
             pause();
         }
-    } while (choice != 3);
-
+        else if (choice==2) {
+            basicOperations();
+            pause();
+        }
+    } while(choice!=3);
     return 0;
 }
